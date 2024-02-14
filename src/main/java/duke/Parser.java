@@ -29,6 +29,7 @@ public class Parser {
     private final Pattern pFrom = Pattern.compile("/from");
     private final Pattern pTo = Pattern.compile("/to");
     private final Pattern pDelete = Pattern.compile("delete (\\d+)");
+    private final Pattern pUpdate = Pattern.compile("update (\\d+)");
     /**
      * Receives input from Ui then interprets it before calling functions from tasklist, ui and storage
      */
@@ -44,6 +45,8 @@ public class Parser {
         Matcher mTo = pTo.matcher(input);
         Matcher mDelete = pDelete.matcher(input);
         Matcher mFind = pFind.matcher(input);
+        Matcher mUpdate = pUpdate.matcher(input);
+
         if (input.equals("reset")) {
             taskList.clear();
             storage.clear();
@@ -52,6 +55,8 @@ public class Parser {
             return "Bye. Hope to see you again soon!";
         } else if (input.equals("list")) {
             return taskList.getList();
+        } else if (mUpdate.find()) {
+            return update(input);
         } else if (mFind.find()) {
             String newInput = input.replace("find", "").trim();
             ArrayList<Task> tasks = taskList.find(newInput);
@@ -210,6 +215,99 @@ public class Parser {
                 result = result + t + "\n";
             }
             return result;
+        }
+    }
+    private String update(String input) {
+        Matcher mTodo = pTodo.matcher(input);
+        Matcher mDeadline = pDeadline.matcher(input);
+        Matcher mEvent = pEvent.matcher(input);
+        Matcher mBy = pBy.matcher(input);
+        Matcher mFrom = pFrom.matcher(input);
+        Matcher mTo = pTo.matcher(input);
+        Matcher mUpdate = pUpdate.matcher(input);
+
+        String captured = mUpdate.group(1);
+        int taskNumber = Integer.parseInt(captured);
+        if (taskNumber < 1 || taskNumber > taskList.getLength()) {
+            return "please input a valid number for task to be updated";
+        }
+        if (mTodo.find()) {
+            String newInput = input.substring(mUpdate.end()).replace("todo", "");
+            Todo n = new Todo(newInput, false);
+            if (newInput.trim().equals("")) {
+                return "Task cannot be empty!";
+            } else {
+                taskList.replace(taskNumber - 1, n);
+                storage.edit(taskNumber - 1, n.export());
+                String result = "OK, I have successfully updated this task :\n";
+                result = result + n + "\n";
+                result = result + "You now have " + taskList.getLength() + " items in the list.";
+                return result;
+            }
+        } else if (mEvent.find()) {
+            if (mFrom.find() && mTo.find()) {
+                String newInput = input.substring(mUpdate.end()).trim();
+                int startIndex = newInput.indexOf("/from");
+                int startIndexTo = newInput.indexOf("/to");
+
+                String subFrom = newInput.substring(startIndex + 5, startIndexTo).trim();
+                String subTo = newInput.substring(startIndexTo + 3).trim();
+                String nextInput = newInput.substring(newInput.indexOf("event") + 5, startIndex);
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+                LocalDateTime ldt;
+                LocalDateTime ldt2;
+                try {
+                    ldt = LocalDateTime.parse(subFrom, formatter);
+                    ldt2 = LocalDateTime.parse(subTo, formatter);
+                } catch (DateTimeParseException e) {
+                    // Handle parsing exceptions
+                    return "Please enter a valid date/time";
+                }
+                if (nextInput.trim().equals("")) {
+                    return "Task cannot be empty!";
+                } else {
+                    Event n = new Event(nextInput, false, ldt, ldt2);
+                    taskList.replace(taskNumber - 1, n);
+                    storage.edit(taskNumber - 1, n.export());
+                    String result = "OK, I have successfully updated this task :\n";
+                    result = result + n + "\n";
+                    result = result + "You now have " + taskList.getLength() + " items in the list.";
+                    return result;
+                }
+            } else {
+                return "pls input your start and end of the event.";
+            }
+
+        } else if (mDeadline.find()) {
+            if (mBy.find()) {
+                String newInput = input.substring(mUpdate.end()).trim();
+                int finalIndex = newInput.indexOf("/by") + 3;
+                String dL = newInput.substring(finalIndex);
+                String nextInput = newInput.substring(newInput.indexOf("deadline") + 8, newInput.indexOf("/by"));
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern(" yyyy-MM-dd HH:mm");
+                LocalDateTime ldt;
+                try {
+                    // Parse the string into a LocalDate object
+                    ldt = LocalDateTime.parse(dL, formatter);
+                } catch (DateTimeParseException e) {
+                    return "Please enter a valid date/time";
+                }
+                if (nextInput.trim().equals("")) {
+                    return "Task cannot be empty!";
+                } else {
+                    Deadline n = new Deadline(nextInput, false, ldt);
+                    taskList.replace(taskNumber - 1, n);
+                    storage.edit(taskNumber - 1, n.export());
+                    String result = "OK, I have successfully updated this task :\n";
+                    result = result + n + "\n";
+                    result = result + "You now have " + taskList.getLength() + " items in the list.";
+                    return result;
+                }
+            } else {
+                return "please include a deadline";
+            }
+        } else {
+            return "error! please ensure your replacement task details are correct";
         }
     }
 }

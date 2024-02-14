@@ -78,7 +78,7 @@ class Event extends Task {
     @Override
     public String toString() {
         String s = super.toString();
-        return "[E]" + s + "(from " + from.format(DateTimeFormatter.ofPattern("MMM d yyyy HH:ss")).replace("T", " ") + " to " + to.format(DateTimeFormatter.ofPattern("MMM d yyyy HH:ss")).replace("T", " ") + ")";
+        return "[E]" + s + "(from " + from.format(DateTimeFormatter.ofPattern("MMM d yyyy HH:mm")).replace("T", " ") + " to " + to.format(DateTimeFormatter.ofPattern("MMM d yyyy HH:mm")).replace("T", " ") + ")";
     }
     /**
      * different string to be generated and written into storage
@@ -139,7 +139,7 @@ class Deadline extends Task {
     @Override
     public String toString() {
         String s = super.toString();
-        return "[D]" + s + "(by:" + by.format(DateTimeFormatter.ofPattern("MMM d yyyy HH:ss")).replace("T", " ") +")";
+        return "[D]" + s + "(by:" + by.format(DateTimeFormatter.ofPattern("MMM d yyyy HH:mm")).replace("T", " ") +")";
     }
     /**
      * Rewrites string to be exported to storage

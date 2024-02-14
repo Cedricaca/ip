@@ -32,6 +32,14 @@ public class TaskList {
         }
         return null;
     }
+    public Task replace(int numberToReplace, Task task) {
+        if (numberToReplace < taskList.size() && numberToReplace >= 0) {
+            Task t = taskList.set(numberToReplace, task);
+            return t;
+        }
+        return null;
+
+    }
     /**
      * Gets a task from the list
      * @param numberToGet the task to be returned based on sequence
