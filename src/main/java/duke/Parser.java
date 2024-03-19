@@ -33,7 +33,7 @@ public class Parser {
      * Receives input from Ui then interprets it before calling functions from tasklist, ui and storage
      */
     public String interpret(String input) {
-
+        input = input.trim();
         Matcher mMark = pMark.matcher(input);
         Matcher mUnmark = pUnmark.matcher(input);
         Matcher mTodo = pTodo.matcher(input);
@@ -81,7 +81,7 @@ public class Parser {
                 return "please include a deadline";
             }
         } else {
-            return "Sorry, no idea what u talking about lulz";
+            return "Sorry, no idea what u talking about!";
         }
 
     }
@@ -96,7 +96,6 @@ public class Parser {
         if (number > 0 && number <= taskList.getLength()) {
             Task t = taskList.delete(number - 1);
             storage.delete(number-1);
-
             String result = "OK! I have deleted this task:\n";
             result = result + t.toString();
             return result;
@@ -117,7 +116,6 @@ public class Parser {
             Task t = taskList.get(number - 1);
             t.unmark();
             storage.edit(number - 1, t.export());
-
             String result = "Oh no! I have marked this as not done:\n";
             result = result + t;
             return result;
@@ -137,7 +135,6 @@ public class Parser {
             Task t = taskList.get(number - 1);
             t.mark();
             storage.edit(number - 1, t.export());
-
             String result = "Nice! I have marked this as done:\n";
             result = result + t;
             return result;
@@ -158,7 +155,6 @@ public class Parser {
         } else {
             taskList.add(n);
             storage.add(n.export());
-
             String result = "OK, I have added this task :\n";
             result = result + n + "\n";
             result = result + "You now have " + taskList.getLength() + " items in the list.";
@@ -185,7 +181,6 @@ public class Parser {
             ldt = LocalDateTime.parse(subFrom, formatter);
             ldt2 = LocalDateTime.parse(subTo, formatter);
         } catch (DateTimeParseException e) {
-            // Handle parsing exceptions
             return "Please enter a valid date/time";
         }
         if (newInput.trim().equals("")) {
