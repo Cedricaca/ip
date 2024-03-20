@@ -25,8 +25,7 @@ public class Storage {
     private final Pattern pTodo = Pattern.compile("[T]");
     private final Pattern pDeadline = Pattern.compile("[D]");
     private final Pattern pEvent2 = Pattern.compile("[E]");
-    private final Pattern pUnmarked = Pattern.compile("[ ]");
-    private final Pattern pMarked = Pattern.compile("[X]");
+
     /**
      * Checks that the file and folder exists, else creates them
      */
@@ -132,5 +131,97 @@ public class Storage {
      * @param number line to edit
      * @param L String to change the line into
      */
+    public void edit(int number, String L) {
+        ArrayList<String> lines = new ArrayList<>();
+        String currentLine;
+        int currLine = 0;
+        while ((currentLine = read(currLine)) != null) {
+            if (currLine != number) {
+                lines.add(currentLine);
+            } else {
+                lines.add(L);
+            }
+            currLine = currLine + 1;
+        }
+        clear();
+        for (String Line : lines) {
+            add(Line);
+        }
+    }
 
+    /**
+     * moves all tasks from storage txt to the new created tasklist
+     * @param taskList to be written to
+     */
+    public void move(TaskList taskList) {
+        check();
+        String currentLine;
+        int currLine = 0;
+        while ((currentLine = read(currLine)) != null) {
+            Matcher mTodo2 = pTodo.matcher(currentLine);
+            Matcher mEvent2 = pEvent2.matcher(currentLine);
+            Matcher mDeadline2 = pDeadline.matcher(currentLine);
+            if (mTodo2.find()) {
+                todoFound(taskList,currentLine);
+            } else if (mDeadline2.find()) {
+                deadLineFound(taskList, currentLine);
+            } else if (mEvent2.find()) {
+                eventFound(taskList, currentLine);
+            }
+            currLine = currLine + 1;
+        }
+    }
+    private void todoFound (TaskList taskList, String currentLine) {
+        Pattern pMarked = Pattern.compile("[X]");
+        Matcher mMarked = pMarked.matcher(currentLine);
+        Todo n = new Todo(currentLine.substring(6), false);
+        if (mMarked.find()) {
+            n.mark();
+        }
+        taskList.add(n);
+    }
+
+    private void deadLineFound(TaskList taskList, String currentLine) {
+        Pattern pMarked = Pattern.compile("[X]");
+        Matcher mMarked = pMarked.matcher(currentLine);
+        int finalIndex = currentLine.indexOf("/by") + 3;
+        String dL = currentLine.substring(finalIndex);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        LocalDateTime ldt = null;
+        try {
+            ldt = LocalDateTime.parse(dL, formatter);
+        } catch (DateTimeParseException e) {
+        }
+        String newInput = currentLine.substring(currentLine.indexOf("deadline") + 7, currentLine.indexOf("/by"));
+        Deadline n = new Deadline(newInput, false, ldt);
+        if (mMarked.find()) {
+            n.mark();
+        }
+        taskList.add(n);
+    }
+
+    private void eventFound(TaskList taskList, String currentLine) {
+        Pattern pMarked = Pattern.compile("[X]");
+        Matcher mMarked = pMarked.matcher(currentLine);
+        int startIndex = currentLine.indexOf("/from");
+        int startIndexTo = currentLine.indexOf("/to");
+
+        String subFrom = currentLine.substring(startIndex + 5, startIndexTo);
+        String subTo = currentLine.substring(startIndexTo + 3);
+
+        String newInput = currentLine.substring(currentLine.indexOf("event") + 7, startIndex);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        LocalDateTime ldt = null;
+        LocalDateTime ldt2 = null;
+        try {
+            ldt = LocalDateTime.parse(subFrom, formatter);
+            ldt2 = LocalDateTime.parse(subTo, formatter);
+        } catch (DateTimeParseException e) {
+        }
+        Event n = new Event(newInput, false, ldt, ldt2);
+        if (mMarked.find()) {
+            n.mark();
+        }
+        taskList.add(n);
+    }
 }
