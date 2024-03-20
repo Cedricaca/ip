@@ -33,15 +33,11 @@ public class Parser {
      * Receives input from Ui then interprets it before calling functions from tasklist, ui and storage
      */
     public String interpret(String input) {
-
         Matcher mMark = pMark.matcher(input);
         Matcher mUnmark = pUnmark.matcher(input);
         Matcher mTodo = pTodo.matcher(input);
         Matcher mDeadline = pDeadline.matcher(input);
         Matcher mEvent = pEvent.matcher(input);
-        Matcher mBy = pBy.matcher(input);
-        Matcher mFrom = pFrom.matcher(input);
-        Matcher mTo = pTo.matcher(input);
         Matcher mDelete = pDelete.matcher(input);
         Matcher mFind = pFind.matcher(input);
         if (input.equals("reset")) {
@@ -53,9 +49,7 @@ public class Parser {
         } else if (input.equals("list")) {
             return taskList.getList();
         } else if (mFind.find()) {
-            String newInput = input.replace("find", "").trim();
-            ArrayList<Task> tasks = taskList.find(newInput);
-            return find(tasks);
+            return find(input);
         } else if (mDelete.find()) {
             String captured = mDelete.group(1);
             return delete(captured);
@@ -66,20 +60,11 @@ public class Parser {
             String captured = mMark.group(1);
             return mark(captured);
         } else if (mTodo.find()) {
-            String newInput = input.replace("todo", "");
-            return todo(newInput);
+            return todo(input);
         } else if (mEvent.find()) {
-            if (mFrom.find() && mTo.find()) {
-                return event(input);
-            } else {
-                return "pls input your start and end of the event.";
-            }
+            return event(input);
         } else if (mDeadline.find()) {
-            if (mBy.find()) {
-                return deadline(input);
-            } else {
-                return "please include a deadline";
-            }
+            return deadline(input);
         } else {
             return "Sorry, no idea what u talking about lulz";
         }
@@ -130,7 +115,8 @@ public class Parser {
         }
     }
 
-    private String todo(String newInput) {
+    private String todo(String input) {
+        String newInput = input.replace("todo", "");
         Todo n = new Todo(newInput, false);
         if (newInput.trim().equals("")) {
             return "Task cannot be empty!";
@@ -146,62 +132,75 @@ public class Parser {
     }
 
     private String event(String input) {
-        int startIndex = input.indexOf("/from");
-        int startIndexTo = input.indexOf("/to");
+        Matcher mFrom = pFrom.matcher(input);
+        Matcher mTo = pTo.matcher(input);
+        if (mFrom.find() && mTo.find()) {
+            int startIndex = input.indexOf("/from");
+            int startIndexTo = input.indexOf("/to");
 
-        String subFrom = input.substring(startIndex + 5, startIndexTo).trim();
-        String subTo = input.substring(startIndexTo + 3).trim();
-        String newInput = input.substring(input.indexOf("event") + 5, startIndex);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        LocalDateTime ldt;
-        LocalDateTime ldt2;
-        try {
-            ldt = LocalDateTime.parse(subFrom, formatter);
-            ldt2 = LocalDateTime.parse(subTo, formatter);
-        } catch (DateTimeParseException e) {
-            // Handle parsing exceptions
-            return "Please enter a valid date/time";
-        }
-        if (newInput.trim().equals("")) {
-            return "Task cannot be empty!";
+            String subFrom = input.substring(startIndex + 5, startIndexTo).trim();
+            String subTo = input.substring(startIndexTo + 3).trim();
+            String newInput = input.substring(input.indexOf("event") + 5, startIndex);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            LocalDateTime ldt;
+            LocalDateTime ldt2;
+            try {
+                ldt = LocalDateTime.parse(subFrom, formatter);
+                ldt2 = LocalDateTime.parse(subTo, formatter);
+            } catch (DateTimeParseException e) {
+                // Handle parsing exceptions
+                return "Please enter a valid date/time";
+            }
+            if (newInput.trim().equals("")) {
+                return "Task cannot be empty!";
+            } else {
+                Event n = new Event(newInput, false, ldt, ldt2);
+                taskList.add(n);
+                storage.add(n.export());
+
+                String result = "OK, I have added this task :\n";
+                result = result + n + "\n";
+                result = result + "You now have " + taskList.getLength() + " items in the list.";
+                return result;
+            }
         } else {
-            Event n = new Event(newInput, false, ldt, ldt2);
-            taskList.add(n);
-            storage.add(n.export());
-
-            String result = "OK, I have added this task :\n";
-            result = result + n + "\n";
-            result = result + "You now have " + taskList.getLength() + " items in the list.";
-            return result;
+            return "pls input your start and end of the event.";
         }
     }
 
     private String deadline(String input) {
-        int finalIndex = input.indexOf("/by") + 3;
-        String dL = input.substring(finalIndex);
-        String newInput = input.substring(input.indexOf("deadline") + 8, input.indexOf("/by"));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(" yyyy-MM-dd HH:mm");
-        LocalDateTime ldt;
-        try {
-            // Parse the string into a LocalDate object
-            ldt = LocalDateTime.parse(dL, formatter);
-        } catch (DateTimeParseException e) {
-            return "Please enter a valid date/time";
-        }
-        if (newInput.trim().equals("")) {
-            return "Task cannot be empty!";
+        Matcher mBy = pBy.matcher(input);
+        if (mBy.find()) {
+            int finalIndex = input.indexOf("/by") + 3;
+            String dL = input.substring(finalIndex);
+            String newInput = input.substring(input.indexOf("deadline") + 8, input.indexOf("/by"));
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(" yyyy-MM-dd HH:mm");
+            LocalDateTime ldt;
+            try {
+                // Parse the string into a LocalDate object
+                ldt = LocalDateTime.parse(dL, formatter);
+            } catch (DateTimeParseException e) {
+                return "Please enter a valid date/time";
+            }
+            if (newInput.trim().equals("")) {
+                return "Task cannot be empty!";
+            } else {
+                Deadline n = new Deadline(newInput, false, ldt);
+                taskList.add(n);
+                String result = "OK, I have added this task :\n";
+                result = result + n + "\n";
+                result = result + "You now have " + taskList.getLength() + " items in the list.";
+                storage.add(n.export());
+                return result;
+            }
         } else {
-            Deadline n = new Deadline(newInput, false, ldt);
-            taskList.add(n);
-            String result = "OK, I have added this task :\n";
-            result = result + n + "\n";
-            result = result + "You now have " + taskList.getLength() + " items in the list.";
-            storage.add(n.export());
-            return result;
+            return "please include a deadline";
         }
     }
 
-    private String find(ArrayList<Task> tasks) {
+    private String find(String input) {
+        String newInput = input.replace("find", "").trim();
+        ArrayList<Task> tasks = taskList.find(newInput);
         if (tasks.size() == 0) {
             return "There are no tasks that match your description!";
         } else {
